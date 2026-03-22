@@ -1,0 +1,20 @@
+# ============================================================================
+# Core dependencies
+# ============================================================================
+psycopg2-binary==2.9.9          # PostgreSQL adapter for Python
+requests==2.31.0                # HTTP library
+playwright==1.40.0              # Browser automation framework
+psutil==5.9.6                   # System and process utilities
+
+# ============================================================================
+# Async operations
+# ============================================================================
+aiohttp==3.9.1                  # Async HTTP client/server framework
+asyncio-contextmanager==1.0.1   # Context manager utilities for async
+
+# ============================================================================
+# Development & Testing (optional)
+# ============================================================================
+# pytest==7.4.3
+# pytest-asyncio==0.21.1
+# python-dotenv==1.0.0
