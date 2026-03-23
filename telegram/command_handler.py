@@ -8,7 +8,7 @@ from core.config import BOT_TOKEN, BOT_POLLING_INTERVAL
 from subscribers.subscribers import add_subscriber, remove_subscriber
 from telegram.telegram_client import send_telegram_message, send_photo_to_chat
 from telegram.keyboards import send_main_menu, show_menu_buttons, send_stats_submenu, show_stats_menu_buttons
-from stats.stats import get_full_stats, get_top_leagues, get_worst_leagues, get_last_5_matches, get_profit_graph, get_this_month_stats
+from stats.stats import get_full_stats, get_top_leagues, get_worst_leagues, get_last_5_matches, get_profit_graph, get_this_month_stats, get_total_profit
 
 
 # ============================================================================
@@ -101,7 +101,8 @@ def _handle_full_stats_button(chat_id):
     # Отправляем график прибыли отдельно
     graph_image = get_profit_graph()
     if graph_image:
-        send_photo_to_chat(chat_id, graph_image, caption="📊 Поставочная статистика")
+        profit_text = get_total_profit()
+        send_photo_to_chat(chat_id, graph_image, caption=profit_text)
 
 
 def _handle_last_5_button(chat_id):

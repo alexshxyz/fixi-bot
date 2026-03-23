@@ -27,11 +27,7 @@ def get_full_stats():
             COUNT(*) AS total_matches, 
             SUM(CASE WHEN result = 'Won' THEN 1 ELSE 0 END) AS wins,
             SUM(CASE WHEN result = 'Lost' THEN 1 ELSE 0 END) AS losses,
-            SUM(CASE WHEN result = 'Void' THEN 1 ELSE 0 END) AS voids,
-            ROUND(
-                SUM(CASE WHEN result = 'Won' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0),
-                0
-            ) AS win_percent
+            SUM(CASE WHEN result = 'Void' THEN 1 ELSE 0 END) AS voids
         FROM matches;
         """
         
@@ -41,22 +37,34 @@ def get_full_stats():
         conn.close()
         
         if result:
-            total_matches, wins, losses, voids, win_percent = result
+            total_matches, wins, losses, voids = result
             wins = wins or 0
             losses = losses or 0
             voids = voids or 0
-            win_percent = int(win_percent) if win_percent else 0
+            
+            # Рассчитываем WR (Win Rate) - исключаем Void
+            matches_without_void = wins + losses
+            if matches_without_void > 0:
+                win_rate = int(wins * 100 / matches_without_void)
+            else:
+                win_rate = 0
+            
+            # Рассчитываем Profit и ROI
+            # Won = +0.8, Lost = -1, Void = 0
+            profit = wins * 0.8 - losses * 1
+            if total_matches > 0:
+                roi = int(profit * 100 / total_matches)
+            else:
+                roi = 0
             
             stats_text = (
-                f"Всего матчей: <b>{total_matches}</b>\n\n"
-                f"✅: <b>{wins}</b> "
-                f"❌: <b>{losses}</b> "
-                f"🔁: <b>{voids}</b>\n\n"
-                f"Процент побед: <b>{win_percent}%</b>"
+                f"📊 <b>ОБЩАЯ СТАТИСТИКА</b>\n\n"
+                f"💰 {roi}% ROI 📈 {win_rate}% WR\n\n"
+                f"{total_matches} матчей ({wins}W / {losses}L / {voids}D)"
             )
             return stats_text
         else:
-            return "📈 <b>Full Stats</b>\n\nДанных в базе нет."
+            return "📊 <b>ОБЩАЯ СТАТИСТИКА</b>\n\nДанных в базе нет."
     except Exception as e:
         print(f"[DB] Ошибка при получении полной статистики: {e}")
         return f"❌ Ошибка при получении статистики: {e}"
@@ -79,12 +87,7 @@ def get_top_leagues():
             COUNT(*) AS total_matches,
             SUM(CASE WHEN result = 'Won' THEN 1 ELSE 0 END) AS wins,
             SUM(CASE WHEN result = 'Lost' THEN 1 ELSE 0 END) AS losses,
-            SUM(CASE WHEN result = 'Void' THEN 1 ELSE 0 END) AS voids,
-            ROUND(
-                SUM(CASE WHEN result = 'Won' THEN 1 ELSE 0 END)::numeric 
-                / NULLIF(COUNT(*), 0) * 100,
-                0
-            ) AS win_percent
+            SUM(CASE WHEN result = 'Void' THEN 1 ELSE 0 END) AS voids
         FROM matches
         GROUP BY league
         ORDER BY 
@@ -100,16 +103,21 @@ def get_top_leagues():
         
         if results:
             stats_text = "🏆 <b>Top Leagues</b>\n\n"
-            for league, total_matches, wins, losses, voids, win_percent in results:
+            for idx, (league, total_matches, wins, losses, voids) in enumerate(results, 1):
                 wins = wins or 0
                 losses = losses or 0
                 voids = voids or 0
-                win_percent = int(win_percent) if win_percent else 0
+                
+                # Рассчитываем WR - исключаем Void
+                matches_without_void = wins + losses
+                if matches_without_void > 0:
+                    win_rate = int(wins * 100 / matches_without_void)
+                else:
+                    win_rate = 0
                 
                 stats_text += (
-                    f"<i>{league}</i>\n"
-                    f"<blockquote>{wins}+ {losses}- {voids}=</blockquote>\n"
-                    f"Процент побед: <b>{win_percent}%</b>\n\n"
+                    f"{idx}. <i>{league}</i>\n"
+                    f"{wins}W / {losses}L / {voids}D — {win_rate}%\n\n"
                 )
             return stats_text.rstrip()
         else:
@@ -136,12 +144,7 @@ def get_worst_leagues():
             COUNT(*) AS total_matches,
             SUM(CASE WHEN result = 'Won' THEN 1 ELSE 0 END) AS wins,
             SUM(CASE WHEN result = 'Lost' THEN 1 ELSE 0 END) AS losses,
-            SUM(CASE WHEN result = 'Void' THEN 1 ELSE 0 END) AS voids,
-            ROUND(
-                SUM(CASE WHEN result = 'Won' THEN 1 ELSE 0 END)::numeric 
-                / NULLIF(COUNT(*), 0) * 100,
-                0
-            ) AS win_percent
+            SUM(CASE WHEN result = 'Void' THEN 1 ELSE 0 END) AS voids
         FROM matches
         GROUP BY league
         ORDER BY 
@@ -157,16 +160,21 @@ def get_worst_leagues():
         
         if results:
             stats_text = "📉 <b>Worst Leagues</b>\n\n"
-            for league, total_matches, wins, losses, voids, win_percent in results:
+            for idx, (league, total_matches, wins, losses, voids) in enumerate(results, 1):
                 wins = wins or 0
                 losses = losses or 0
                 voids = voids or 0
-                win_percent = int(win_percent) if win_percent else 0
+                
+                # Рассчитываем WR - исключаем Void
+                matches_without_void = wins + losses
+                if matches_without_void > 0:
+                    win_rate = int(wins * 100 / matches_without_void)
+                else:
+                    win_rate = 0
                 
                 stats_text += (
-                    f"<i>{league}</i>\n"
-                    f"<blockquote>{wins}+ {losses}- {voids}=</blockquote>\n"
-                    f"Процент побед: <b>{win_percent}%</b>\n\n"
+                    f"{idx}. <i>{league}</i>\n"
+                    f"{wins}W / {losses}L / {voids}D — {win_rate}%\n\n"
                 )
             return stats_text.rstrip()
         else:
@@ -178,8 +186,7 @@ def get_worst_leagues():
 
 def get_last_5_matches():
     """
-    Получает последние 5 матчей из БД в порядке от старого к новому
-    (последняя запись в БД - самая нижняя в выводе).
+    Получает последние 5 матчей из БД с компактным форматом.
     
     Returns:
         str: отформатированный HTML-текст с последними 5 матчами
@@ -196,8 +203,8 @@ def get_last_5_matches():
             prediction,
             final_score,
             result,
-            link,
-            date
+            date,
+            link
         FROM matches
         ORDER BY id DESC
         LIMIT 5
@@ -209,28 +216,27 @@ def get_last_5_matches():
         conn.close()
         
         if results:
-            # Не разворачиваем - выводим в порядке DESC, чтобы самый новый матч был первым
-            stats_text = "⚡️ <b>Last 5</b>\n\n"
+            stats_text = "<b>⚡️ LAST 5</b>\n\n"
             
-            for league, home_team, away_team, prediction, final_score, result, link, match_date in results:
+            for league, home_team, away_team, prediction, final_score, result, match_date, link in results:
                 # Подготавливаем значения, заменяя пустые на "?"
                 league = league or "?"
                 home_team = home_team or "?"
                 away_team = away_team or "?"
                 prediction = prediction or "?"
                 final_score = final_score or "?"
-                link = link or "?"
+                link = link or "#"
                 
-                # Преобразуем дату из формата YYYY-MM-DD в DD-MM-YYYY
+                # Преобразуем дату из формата YYYY-MM-DD в ДД.МММ.ГГ
                 if match_date:
                     try:
                         if isinstance(match_date, str):
                             # Парсим строку в формате YYYY-MM-DD (как сохраняется в БД)
                             date_obj = datetime.strptime(match_date, '%Y-%m-%d')
-                            match_date = date_obj.strftime('%d-%m-%Y')
+                            match_date = date_obj.strftime('%d.%m.%y')
                         else:
                             # Если это объект date/datetime, преобразуем
-                            match_date = match_date.strftime('%d-%m-%Y')
+                            match_date = match_date.strftime('%d.%m.%y')
                     except Exception as e:
                         print(f"[STATS] Ошибка при преобразовании даты {match_date}: {e}")
                         match_date = "?"
@@ -248,18 +254,16 @@ def get_last_5_matches():
                     result_emoji = "?"
                 
                 # Собираем сообщение в нужном формате
+                match_text = f"{result_emoji} <b>{home_team} - {away_team} ({final_score})</b>"
+                
                 stats_text += (
-                    f"{league}\n"
-                    f"<b>{home_team} - {away_team}</b>\n"
-                    f"<b>{prediction}</b>\n"
-                    f"{result_emoji} ({final_score})\n"
-                    f"<b>{match_date}</b>\n"
-                    f"{link}\n\n"
+                    f"<a href=\"{link}\">{match_text}</a>\n"
+                    f"{league} | {prediction} | <b>{match_date}</b>\n\n"
                 )
             
             return stats_text.rstrip()
         else:
-            return "⚡️ <b>Last 5</b>\n\nДанных в базе нет."
+            return "⚡️ LAST 5\n\nДанных в базе нет."
     except Exception as e:
         print(f"[DB] Ошибка при получении последних матчей: {e}")
         return f"❌ Ошибка при получении статистики: {e}"
@@ -290,11 +294,11 @@ def get_this_month_stats():
         
         # Названия месяцев в именительном падеже
         month_names = {
-            1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель",
-            5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
-            9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"
+            1: "ЯНВАРЬ", 2: "ФЕВРАЛЬ", 3: "МАРТ", 4: "АПРЕЛЬ",
+            5: "МАЙ", 6: "ИЮНЬ", 7: "ИЮЛЬ", 8: "АВГУСТ",
+            9: "СЕНТЯБРЬ", 10: "ОКТЯБРЬ", 11: "НОЯБРЬ", 12: "ДЕКАБРЬ"
         }
-        current_month_name = month_names.get(current_month, "Неизвестный месяц")
+        current_month_name = month_names.get(current_month, "НЕИЗВЕСТНЫЙ МЕСЯЦ")
         
         query = """
         SELECT
@@ -317,27 +321,26 @@ def get_this_month_stats():
             losses = losses or 0
             voids = voids or 0
             
-            # Вычисляем процент побед (без учета Void)
-            matches_to_calc = wins + losses
-            if matches_to_calc > 0:
-                win_percent = int(wins * 100 / matches_to_calc)
+            # Вычисляем WR (Win Rate) - исключаем Void
+            matches_without_void = wins + losses
+            if matches_without_void > 0:
+                win_rate = int(wins * 100 / matches_without_void)
             else:
-                win_percent = 0
+                win_rate = 0
             
-            # Вычисляем прибыль
-            profit = wins * 0.8 + losses * (-1) + voids * 0
+            # Вычисляем прибыль (Won = +0.8, Lost = -1, Void = 0)
+            profit = wins * 0.8 - losses * 1
             profit_str = f"+{profit:.2f}" if profit >= 0 else f"{profit:.2f}"
             
             stats_text = (
-                f"<b>📅 {current_month_name}</b>\n\n"
-                f"Матчей: <b>{total_matches}</b>\n"
-                f"<blockquote>{wins}+ {losses}- {voids}=</blockquote>\n"
-                f"Процент побед: <b>{win_percent}%</b>\n\n"
-                f"Прибыль: <b>{profit_str} флетов</b>"
+                f"📅 <b>{current_month_name}</b>\n\n"
+                f"💰 {profit_str} флэтов 📈 {win_rate}% WR\n\n"
+                f"🎯 {total_matches} матчей\n"
+                f"{wins}W / {losses}L / {voids}D"
             )
             return stats_text
         else:
-            return f"<i>{current_month_name}</i>\n\nДанных в базе нет."
+            return f"📅 <b>{current_month_name}</b>\n\nДанных в базе нет."
     except Exception as e:
         print(f"[DB] Ошибка при получении статистики за месяц: {e}")
         return f"❌ Ошибка при получении статистики: {e}"
@@ -347,6 +350,7 @@ def get_profit_graph():
     """
     Генерирует график прибыли по датам матчей.
     Прибыль считается: Won = +0.8, Lost = -1, Void = 0
+    Группирует данные по дням (точка - это конечный профит за день).
     
     Returns:
         BytesIO: изображение графика или None при ошибке
@@ -373,16 +377,15 @@ def get_profit_graph():
         if not results:
             return None
         
-        # Подготавливаем данные для графика
-        dates = []
-        cumulative_profit = []
+        # Подготавливаем данные для графика, группируя по дням
+        daily_profit = {}  # date -> profit_sum
         current_profit = 0
         
         for match_date, result in results:
             try:
                 # Парсим дату в формате YYYY-MM-DD (как сохраняется в БД)
                 if isinstance(match_date, str):
-                    date_obj = datetime.strptime(match_date, '%Y-%m-%d')
+                    date_obj = datetime.strptime(match_date, '%Y-%m-%d').date()
                 else:
                     date_obj = match_date
                 
@@ -397,40 +400,64 @@ def get_profit_graph():
                     profit = 0.0
                 
                 current_profit += profit
-                dates.append(date_obj)
-                cumulative_profit.append(current_profit)
+                daily_profit[date_obj] = current_profit
                 
             except Exception as e:
                 print(f"[GRAPH] Ошибка при обработке матча {match_date}: {e}")
                 continue
         
-        if not dates:
+        if not daily_profit:
             return None
         
-        # Создаем график
-        plt.figure(figsize=(12, 6))
-        plt.plot(dates, cumulative_profit, marker='o', linewidth=2, markersize=5, color='#2E86AB')
+        # Сортируем по датам и создаем списки для графика
+        sorted_dates = sorted(daily_profit.keys())
+        dates = [datetime.combine(d, datetime.min.time()) for d in sorted_dates]
+        cumulative_profit = [daily_profit[d] for d in sorted_dates]
         
-        # Форматирование оси X
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%m-%y'))
-        plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
-        plt.xticks(rotation=45, ha='right')
+        # Создаем график с зеленым фоном
+        fig, ax = plt.subplots(figsize=(12, 6))
+        fig.patch.set_facecolor('#2b7f63')
+        ax.set_facecolor('#2b7f63')
         
-        # Добавляем сетку и заголовки
-        plt.grid(True, alpha=0.3)
-        plt.xlabel('Дата', fontsize=11)
-        plt.ylabel('Прибыль (флеты)', fontsize=11)
-        plt.title('График доходности', fontsize=13, fontweight='bold')
+        # Рисуем линию графика (белая, толстая, без точек)
+        ax.plot(dates, cumulative_profit, linewidth=3, color='white')
         
-        # Добавляем нулевую линию
-        plt.axhline(y=0, color='red', linestyle='--', linewidth=1, alpha=0.5)
+        # Форматирование оси X (ММ.ГГ)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m.%y'))
+        ax.xaxis.set_major_locator(mdates.MonthLocator())
+        plt.xticks(rotation=45, ha='right', color='white', fontsize=13, fontweight='bold')
+        for label in ax.get_xticklabels():
+            label.set_fontweight('bold')
+        
+        # Форматирование оси Y
+        ax.tick_params(axis='y', labelcolor='white', labelsize=13, width=2)
+        for label in ax.get_yticklabels():
+            label.set_fontweight('bold')
+        
+        # Добавляем сетку
+        ax.grid(True, alpha=0.2, color='white')
+        # Убирем подписи осей и заголовок
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_title('')
+        
+        # Добавляем нулевую линию (еле видная)
+        ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+        
+        # Изменяем цвет и толщину границ графика
+        ax.spines['bottom'].set_color('white')
+        ax.spines['bottom'].set_linewidth(2)
+        ax.spines['left'].set_color('white')
+        ax.spines['left'].set_linewidth(2)
+        ax.spines['top'].set_color('#2b7f63')
+        ax.spines['right'].set_color('#2b7f63')
         
         # Плотный layout
         plt.tight_layout()
         
         # Сохраняем в BytesIO
         image_bytes = BytesIO()
-        plt.savefig(image_bytes, format='png', dpi=100, bbox_inches='tight')
+        plt.savefig(image_bytes, format='png', dpi=100, bbox_inches='tight', facecolor='#2b7f63')
         plt.close()
         
         image_bytes.seek(0)
@@ -439,3 +466,43 @@ def get_profit_graph():
     except Exception as e:
         print(f"[DB] Ошибка при генерации графика прибыли: {e}")
         return None
+
+
+def get_total_profit():
+    """
+    Рассчитывает итоговую прибыль по всем матчам в базе данных.
+    Прибыль считается: Won = +0.8, Lost = -1, Void = 0
+    
+    Returns:
+        str: отформатированный текст с итоговой прибылью
+    """
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        
+        query = """
+        SELECT
+            SUM(CASE WHEN result = 'Won' THEN 0.8 
+                     WHEN result = 'Lost' THEN -1 
+                     WHEN result = 'Void' THEN 0 
+                     ELSE 0 END) AS total_profit
+        FROM matches
+        """
+        
+        cur.execute(query)
+        result = cur.fetchone()
+        cur.close()
+        conn.close()
+        
+        if result:
+            total_profit = result[0] or 0
+            # Округляем до сотых и форматируем
+            total_profit = round(total_profit, 2)
+            profit_str = f"+{total_profit}" if total_profit >= 0 else f"{total_profit}"
+            
+            return f"🔥 {profit_str} флетов"
+        else:
+            return "❓ 0.00 флетов"
+    except Exception as e:
+        print(f"[DB] Ошибка при расчете итоговой прибыли: {e}")
+        return f"❌ Ошибка при расчете прибыли: {e}"
