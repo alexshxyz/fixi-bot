@@ -16,7 +16,7 @@ TABLE_NAME = os.environ.get('PG_TABLE', 'matches')
 # ============================================================================
 # TELEGRAM BOT CONFIGURATION
 # ============================================================================
-BOT_TOKEN = os.environ.get('BOT_TOKEN', '8616346587:AAGLsNDIt-kQSNnjNlCTdC2sWfAMLPR5kms')  # MAIN BOT ТОКЕН
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '8635214594:AAFTpbdTopE-gR8w3gvgnfv8IJwzN5x_i_k')  # MAIN BOT ТОКЕН
 USERS_FILE = os.environ.get('USERS_FILE', '/opt/nowgoal_bot/new_bot_playwrite/subscribers.json')  # Файл для хранения chat_ids подписчиков
 BOT_POLLING_INTERVAL = 1  # интервал polling'а для получения команд (в секундах)
 
