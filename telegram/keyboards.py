@@ -71,6 +71,8 @@ def show_stats_menu_buttons(chat_id):
     keyboard = {
         'keyboard': [
             [{'text': '📈 Full Stats'}],
+            [{'text': '⚡️ Last 5'}],
+            [{'text': '📅 This Month'}],
             [{'text': '🏆 Top Leagues'}],
             [{'text': '📉 Worst Leagues'}],
             [{'text': '↩️ Назад в меню'}]
@@ -92,6 +94,8 @@ def send_stats_submenu(chat_id):
     keyboard = {
         'keyboard': [
             [{'text': '📈 Full Stats'}],
+            [{'text': '⚡️ Last 5'}],
+            [{'text': '📅 This Month'}],
             [{'text': '🏆 Top Leagues'}],
             [{'text': '📉 Worst Leagues'}],
             [{'text': '↩️ Назад в меню'}]

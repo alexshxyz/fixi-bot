@@ -6,9 +6,9 @@ import time
 import requests
 from core.config import BOT_TOKEN, BOT_POLLING_INTERVAL
 from subscribers.subscribers import add_subscriber, remove_subscriber
-from telegram.telegram_client import send_telegram_message
+from telegram.telegram_client import send_telegram_message, send_photo_to_chat
 from telegram.keyboards import send_main_menu, show_menu_buttons, send_stats_submenu, show_stats_menu_buttons
-from stats.stats import get_full_stats, get_top_leagues, get_worst_leagues
+from stats.stats import get_full_stats, get_top_leagues, get_worst_leagues, get_last_5_matches, get_profit_graph, get_this_month_stats
 
 
 # ============================================================================
@@ -89,6 +89,37 @@ def _handle_stats_button(chat_id):
 def _handle_full_stats_button(chat_id):
     """Обрабатывает нажатие кнопки 📈 Full Stats."""
     stats_text = get_full_stats()
+    keyboard = {
+        'keyboard': [
+            [{'text': '↩️ Назад к статистике'}]
+        ],
+        'resize_keyboard': True,
+        'one_time_keyboard': False
+    }
+    send_telegram_message(chat_id, stats_text, reply_markup=keyboard)
+    
+    # Отправляем график прибыли отдельно
+    graph_image = get_profit_graph()
+    if graph_image:
+        send_photo_to_chat(chat_id, graph_image, caption="📊 Поставочная статистика")
+
+
+def _handle_last_5_button(chat_id):
+    """Обрабатывает нажатие кнопки ⚡️ Last 5."""
+    stats_text = get_last_5_matches()
+    keyboard = {
+        'keyboard': [
+            [{'text': '↩️ Назад к статистике'}]
+        ],
+        'resize_keyboard': True,
+        'one_time_keyboard': False
+    }
+    send_telegram_message(chat_id, stats_text, reply_markup=keyboard)
+
+
+def _handle_this_month_button(chat_id):
+    """Обрабатывает нажатие кнопки 📅 This Month."""
+    stats_text = get_this_month_stats()
     keyboard = {
         'keyboard': [
             [{'text': '↩️ Назад к статистике'}]
@@ -206,6 +237,10 @@ def _route_message(chat_id, user_name, text):
     # Кнопки статистики
     elif text == '📈 Full Stats':
         _handle_full_stats_button(chat_id)
+    elif text == '⚡️ Last 5':
+        _handle_last_5_button(chat_id)
+    elif text == '📅 This Month':
+        _handle_this_month_button(chat_id)
     elif text == '🏆 Top Leagues':
         _handle_top_leagues_button(chat_id)
     elif text == '📉 Worst Leagues':

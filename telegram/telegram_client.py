@@ -82,3 +82,34 @@ def send_message(text):
         text: текст сообщения для рассылки
     """
     send_message_to_all(text)
+
+
+def send_photo_to_chat(chat_id, photo_bytes, caption=None):
+    """
+    Отправляет фотографию конкретному пользователю.
+    
+    Args:
+        chat_id: ID чата получателя
+        photo_bytes: BytesIO объект с изображением
+        caption: подпись к фото (опционально)
+        
+    Returns:
+        bool: True если отправка успешна, False в противном случае
+    """
+    try:
+        url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto'
+        files = {
+            'photo': photo_bytes,
+        }
+        data = {
+            'chat_id': chat_id,
+        }
+        if caption:
+            data['caption'] = caption
+            data['parse_mode'] = 'HTML'
+        
+        response = requests.post(url, data=data, files=files, timeout=10)
+        return response.json().get('ok', False)
+    except Exception as e:
+        print(f"[TELEGRAM] Ошибка при отправке фото: {e}")
+        return False

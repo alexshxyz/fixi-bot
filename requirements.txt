@@ -13,6 +13,11 @@ aiohttp==3.9.1                  # Async HTTP client/server framework
 asyncio-contextmanager==1.0.1   # Context manager utilities for async
 
 # ============================================================================
+# Data visualization
+# ============================================================================
+matplotlib==3.7.1               # Plotting library for graphs and charts
+
+# ============================================================================
 # Development & Testing (optional)
 # ============================================================================
 # pytest==7.4.3

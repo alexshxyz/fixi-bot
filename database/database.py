@@ -4,6 +4,7 @@
 """
 import psycopg2
 from psycopg2 import sql
+from datetime import datetime
 from core.config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS, TABLE_NAME
 from utils.utils import ensure_text, strip_html_tags
 
@@ -55,13 +56,14 @@ def insert_match_to_db(match, prediction_text=None, table=TABLE_NAME):
     result = ''       # пустое
     link = getattr(match, 'url', '') or getattr(match, 'link', '') or ''
     script_flag = None  # оставляем NULL, можно поставить True/False
+    match_date = datetime.now().strftime('%Y-%m-%d')  # текущая дата в формате YYYY-MM-DD для PostgreSQL
 
-    params = (league, home, away, prediction, odds, final_score, result, link, script_flag)
+    params = (league, home, away, prediction, odds, final_score, result, link, script_flag, match_date)
 
     # --- используем psycopg2.sql для безопасной подстановки имени таблицы ---
     insert_query = sql.SQL("""
-        INSERT INTO {table} (league, home_team, away_team, prediction, odds, final_score, result, link, script)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO {table} (league, home_team, away_team, prediction, odds, final_score, result, link, script, date)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """).format(table=sql.Identifier(table))
 
     conn = None
