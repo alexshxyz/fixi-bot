@@ -500,9 +500,9 @@ def get_total_profit():
             total_profit = round(total_profit, 2)
             profit_str = f"+{total_profit}" if total_profit >= 0 else f"{total_profit}"
             
-            return f"🔥 {profit_str} флетов"
+            return f"🔥 {profit_str} флэтов"
         else:
-            return "❓ 0.00 флетов"
+            return "❓ 0.00 флэтов"
     except Exception as e:
         print(f"[DB] Ошибка при расчете итоговой прибыли: {e}")
         return f"❌ Ошибка при расчете прибыли: {e}"

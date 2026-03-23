@@ -111,11 +111,12 @@ class Match(object, metaclass=MetaMatch):
             - Иначе выбираем из over_half/over_full по RATE
         """
         # Убеждаемся что счет передается (даже если пусто)
-        score_line = f"<b>{self.first_team} {self.first_team_score} - {self.second_team_score} {self.second_team}</b>"
+        # Обворачиваем названия команд в гиперссылку на matч
+        score_line = f"<a href=\"{self.url}\"><b>{self.first_team} {self.first_team_score} - {self.second_team_score} {self.second_team}</b></a>"
         if not self.first_team_score and not self.second_team_score:
             print(f"[MATCH_STR] ⚠ Счет пуст! teams='{self.first_team}' vs '{self.second_team}'")
         
-        parts = [f"<b>Crown</b>", f"{self.liga}", score_line]
+        parts = [f"⭐️ <b>Crown</b>", f"{self.liga}", score_line]
 
         # If this match was triggered by Asian Handicap (chosen_kind starts with 'ah_'),
         # render Handicap line instead of Over.
@@ -163,8 +164,6 @@ class Match(object, metaclass=MetaMatch):
                     parts.append(f"Odds half={self.over_half} full={self.over_full}")
                 else:
                     parts.append(f"Odds {round(1 + (self.over or 0), 4)}")
-
-        parts.append(self.url or "")
         
         # Логируем финальное сообщение с URL
         msg = "\n".join(parts)
