@@ -17,17 +17,17 @@ def send_main_menu(chat_id):
         chat_id: ID чата получателя
     """
     menu_text = (
-        "👋🏻 Привет! Я бот для мониторинга прогрузов по БК Crown.\n\n"
-        "▶️ Start - подписаться на уведомления\n"
-        "⏹️ Stop - отписаться от уведомлений\n"
-        "📊 Stats - посмотреть статистику\n"
-        "❓ Help - справка\n\n"
-        "Нажми на кнопку меню для управления."
+        "<b>👋🏻 Hello! I'm your match monitoring assistant.</b>\n\n"
+        "▶️ Start - Notification On\n"
+        "⏹️ Stop - Notification Off\n"
+        "📊 Stats - View Statistics\n"
+        "❓ Help - Help\n\n"
+        "Press the menu button to manage."
     )
     
     keyboard = {
         'keyboard': [
-            [{'text': '🎲 Меню'}]
+            [{'text': '🎲 Menu'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
@@ -48,13 +48,13 @@ def show_menu_buttons(chat_id):
             [{'text': '▶️ Start'}, {'text': '⏹️ Stop'}],
             [{'text': '📊 Stats'}],
             [{'text': '❓ Help'}],
-            [{'text': '🎲 Меню'}]
+            [{'text': '🎲 Menu'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
     }
     
-    send_telegram_message(chat_id, 'Главное меню', reply_markup=keyboard)
+    send_telegram_message(chat_id, 'Main Menu', reply_markup=keyboard)
 
 
 # ============================================================================
@@ -70,18 +70,18 @@ def show_stats_menu_buttons(chat_id):
     """
     keyboard = {
         'keyboard': [
-            [{'text': '📈 Full Stats'}],
+            [{'text': '📚 Summary'}],
             [{'text': '⚡️ Last 5'}],
             [{'text': '📅 This Month'}],
             [{'text': '🏆 Top Leagues'}],
-            [{'text': '📉 Worst Leagues'}],
-            [{'text': '↩️ Назад в меню'}]
+            [{'text': '⛔️ Worst Leagues'}],
+            [{'text': '↩️ Back to Menu'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
     }
     
-    send_telegram_message(chat_id, 'Выбери статистику:', reply_markup=keyboard)
+    send_telegram_message(chat_id, 'Choose Statistics:', reply_markup=keyboard)
 
 
 def send_stats_submenu(chat_id):
@@ -93,18 +93,18 @@ def send_stats_submenu(chat_id):
     """
     keyboard = {
         'keyboard': [
-            [{'text': '📈 Full Stats'}],
+            [{'text': '📚 Summary'}],
             [{'text': '⚡️ Last 5'}],
             [{'text': '📅 This Month'}],
             [{'text': '🏆 Top Leagues'}],
-            [{'text': '📉 Worst Leagues'}],
-            [{'text': '↩️ Назад в меню'}]
+            [{'text': '⛔️ Worst Leagues'}],
+            [{'text': '↩️ Back to Menu'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
     }
     
-    send_telegram_message(chat_id, 'Выбери статистику:', reply_markup=keyboard)
+    send_telegram_message(chat_id, 'Choose Statistics:', reply_markup=keyboard)
 
 
 # ============================================================================
@@ -121,7 +121,7 @@ def send_stats_back_keyboard(chat_id, stats_text):
     """
     keyboard = {
         'keyboard': [
-            [{'text': '↩️ Назад к статистике'}]
+            [{'text': '↩️ Back to Stats'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
@@ -139,7 +139,7 @@ def send_main_menu_keyboard(chat_id, help_text=None):
     """
     keyboard = {
         'keyboard': [
-            [{'text': '🎲 Меню'}]
+            [{'text': '🎲 Menu'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False

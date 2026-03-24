@@ -15,7 +15,8 @@ asyncio-contextmanager==1.0.1   # Context manager utilities for async
 # ============================================================================
 # Data visualization
 # ============================================================================
-matplotlib==3.7.1               # Plotting library for graphs and charts
+plotly==5.18.0                  # Interactive plotting library
+kaleido==0.2.1                  # Static image export for Plotly
 
 # ============================================================================
 # Development & Testing (optional)

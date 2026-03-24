@@ -3,12 +3,9 @@
 Функции для расчёта и форматирования статистики по лигам и в целом.
 """
 from database.database import get_db_conn
-import matplotlib
-matplotlib.use('Agg')  # Используем non-interactive backend для многопоточности
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
+import plotly.graph_objects as go
 from io import BytesIO
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def get_full_stats():
@@ -58,13 +55,13 @@ def get_full_stats():
                 roi = 0
             
             stats_text = (
-                f"📊 <b>ОБЩАЯ СТАТИСТИКА</b>\n\n"
+                f"📚 <b>SUMMARY</b>\n\n"
                 f"💰 {roi}% ROI 📈 {win_rate}% WR\n\n"
-                f"{total_matches} матчей ({wins}W / {losses}L / {voids}D)"
+                f"<b>{total_matches} matches</b> ({wins}W / {losses}L / {voids}D)"
             )
             return stats_text
         else:
-            return "📊 <b>ОБЩАЯ СТАТИСТИКА</b>\n\nДанных в базе нет."
+            return "📚 <b>SUMMARY</b>\n\nNo data available."
     except Exception as e:
         print(f"[DB] Ошибка при получении полной статистики: {e}")
         return f"❌ Ошибка при получении статистики: {e}"
@@ -102,7 +99,8 @@ def get_top_leagues():
         conn.close()
         
         if results:
-            stats_text = "🏆 <b>Top Leagues</b>\n\n"
+            stats_text = "🏆 <b>TOP LEAGUES</b>\n\n"
+            emojis = ['1️⃣', '2️⃣', '3️⃣']
             for idx, (league, total_matches, wins, losses, voids) in enumerate(results, 1):
                 wins = wins or 0
                 losses = losses or 0
@@ -115,13 +113,14 @@ def get_top_leagues():
                 else:
                     win_rate = 0
                 
+                emoji = emojis[idx - 1] if idx - 1 < len(emojis) else str(idx)
                 stats_text += (
-                    f"{idx}. <i>{league}</i>\n"
+                    f"{emoji} <b>{league}</b>\n"
                     f"{wins}W / {losses}L / {voids}D — {win_rate}%\n\n"
                 )
             return stats_text.rstrip()
         else:
-            return "🏆 <b>Top Leagues</b>\n\nДанных в базе нет."
+            return "🏆 <b>TOP LEAGUES</b>\n\nNo data available."
     except Exception as e:
         print(f"[DB] Ошибка при получении топ-лиг: {e}")
         return f"❌ Ошибка при получении статистики: {e}"
@@ -159,7 +158,8 @@ def get_worst_leagues():
         conn.close()
         
         if results:
-            stats_text = "📉 <b>Worst Leagues</b>\n\n"
+            stats_text = "⛔️ <b>WORST LEAGUES</b>\n\n"
+            emojis = ['1️⃣', '2️⃣', '3️⃣']
             for idx, (league, total_matches, wins, losses, voids) in enumerate(results, 1):
                 wins = wins or 0
                 losses = losses or 0
@@ -172,13 +172,14 @@ def get_worst_leagues():
                 else:
                     win_rate = 0
                 
+                emoji = emojis[idx - 1] if idx - 1 < len(emojis) else str(idx)
                 stats_text += (
-                    f"{idx}. <i>{league}</i>\n"
+                    f"{emoji} <b>{league}</b>\n"
                     f"{wins}W / {losses}L / {voids}D — {win_rate}%\n\n"
                 )
             return stats_text.rstrip()
         else:
-            return "📉 <b>Worst Leagues</b>\n\nДанных в базе нет."
+            return "📉 <b>Worst Leagues</b>\n\nNo data available."
     except Exception as e:
         print(f"[DB] Ошибка при получении худших лиг: {e}")
         return f"❌ Ошибка при получении статистики: {e}"
@@ -263,7 +264,7 @@ def get_last_5_matches():
             
             return stats_text.rstrip()
         else:
-            return "⚡️ LAST 5\n\nДанных в базе нет."
+            return "⚡️ LAST 5\n\nNo data available."
     except Exception as e:
         print(f"[DB] Ошибка при получении последних матчей: {e}")
         return f"❌ Ошибка при получении статистики: {e}"
@@ -294,11 +295,11 @@ def get_this_month_stats():
         
         # Названия месяцев в именительном падеже
         month_names = {
-            1: "ЯНВАРЬ", 2: "ФЕВРАЛЬ", 3: "МАРТ", 4: "АПРЕЛЬ",
-            5: "МАЙ", 6: "ИЮНЬ", 7: "ИЮЛЬ", 8: "АВГУСТ",
-            9: "СЕНТЯБРЬ", 10: "ОКТЯБРЬ", 11: "НОЯБРЬ", 12: "ДЕКАБРЬ"
+            1: "JANUARY", 2: "FEBRUARY", 3: "MARCH", 4: "APRIL",
+            5: "MAY", 6: "JUNE", 7: "JULY", 8: "AUGUST",
+            9: "SEPTEMBER", 10: "OCTOBER", 11: "NOVEMBER", 12: "DECEMBER"
         }
-        current_month_name = month_names.get(current_month, "НЕИЗВЕСТНЫЙ МЕСЯЦ")
+        current_month_name = month_names.get(current_month, "UNKNOWN MONTH")
         
         query = """
         SELECT
@@ -334,13 +335,13 @@ def get_this_month_stats():
             
             stats_text = (
                 f"📅 <b>{current_month_name}</b>\n\n"
-                f"💰 {profit_str} флэтов 📈 {win_rate}% WR\n\n"
-                f"🎯 {total_matches} матчей\n"
+                f"💰 {profit_str} units 📈 {win_rate}% WR\n\n"
+                f"🎯 <b>{total_matches} matches</b>\n"
                 f"{wins}W / {losses}L / {voids}D"
             )
             return stats_text
         else:
-            return f"📅 <b>{current_month_name}</b>\n\nДанных в базе нет."
+            return f"📅 <b>{current_month_name}</b>\n\nNo data available."
     except Exception as e:
         print(f"[DB] Ошибка при получении статистики за месяц: {e}")
         return f"❌ Ошибка при получении статистики: {e}"
@@ -348,7 +349,7 @@ def get_this_month_stats():
 
 def get_profit_graph():
     """
-    Генерирует график прибыли по датам матчей.
+    Генерирует график прибыли по датам матчей используя Plotly.
     Прибыль считается: Won = +0.8, Lost = -1, Void = 0
     Группирует данные по дням (точка - это конечный профит за день).
     
@@ -411,58 +412,140 @@ def get_profit_graph():
         
         # Сортируем по датам и создаем списки для графика
         sorted_dates = sorted(daily_profit.keys())
-        dates = [datetime.combine(d, datetime.min.time()) for d in sorted_dates]
+        dates = sorted_dates
         cumulative_profit = [daily_profit[d] for d in sorted_dates]
         
-        # Создаем график с зеленым фоном
-        fig, ax = plt.subplots(figsize=(12, 6))
-        fig.patch.set_facecolor('#2b7f63')
-        ax.set_facecolor('#2b7f63')
+        # Определяем деления по Y кратные трем с учетом нуля (0, 3, 6, 9, 12...)
+        min_profit = min(cumulative_profit)
+        max_profit = max(cumulative_profit)
         
-        # Рисуем линию графика (белая, толстая, без точек)
-        ax.plot(dates, cumulative_profit, linewidth=3, color='white')
+        # Находим диапазон в делениях по 3
+        y_min_ticks = int(min_profit // 3)
+        if min_profit % 3 != 0 and min_profit < 0:
+            y_min_ticks -= 1
         
-        # Форматирование оси X (ММ.ГГ)
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m.%y'))
-        ax.xaxis.set_major_locator(mdates.MonthLocator())
-        plt.xticks(rotation=45, ha='right', color='white', fontsize=13, fontweight='bold')
-        for label in ax.get_xticklabels():
-            label.set_fontweight('bold')
+        y_max_ticks = int(max_profit // 3)
+        if max_profit % 3 != 0 and max_profit > 0:
+            y_max_ticks += 1
         
-        # Форматирование оси Y
-        ax.tick_params(axis='y', labelcolor='white', labelsize=13, width=2)
-        for label in ax.get_yticklabels():
-            label.set_fontweight('bold')
+        # Создаем список всех делений кратных 3
+        all_y_ticks = [i * 3 for i in range(y_min_ticks, y_max_ticks + 1)]
         
-        # Добавляем сетку
-        ax.grid(True, alpha=0.2, color='white')
-        # Убирем подписи осей и заголовок
-        ax.set_xlabel('')
-        ax.set_ylabel('')
-        ax.set_title('')
+        # Убеждаемся, что ноль в списке
+        if 0 not in all_y_ticks:
+            all_y_ticks.append(0)
+        all_y_ticks = sorted(all_y_ticks)
         
-        # Добавляем нулевую линию (еле видная)
-        ax.axhline(y=0, color='white', linestyle='--', linewidth=1, alpha=0.3)
+        # Берем деления для отображения (примерно 4-5 делений)
+        step = max(1, len(all_y_ticks) // 4)
+        y_ticks_display = all_y_ticks[::step]
+        if all_y_ticks[-1] not in y_ticks_display:
+            y_ticks_display.append(all_y_ticks[-1])
         
-        # Изменяем цвет и толщину границ графика
-        ax.spines['bottom'].set_color('white')
-        ax.spines['bottom'].set_linewidth(2)
-        ax.spines['left'].set_color('white')
-        ax.spines['left'].set_linewidth(2)
-        ax.spines['top'].set_color('#2b7f63')
-        ax.spines['right'].set_color('#2b7f63')
+        # Добавляем отступ для лучшего отображения (ноль в основании)
+        # Находим максимальное значение для расчета отступа сверху
+        y_max_tick = max(all_y_ticks) if all_y_ticks else max_profit
+        y_max_display = y_max_tick + abs(y_max_tick) * 0.1
+        y_min_display = 0  # Ноль всегда в основании
         
-        # Плотный layout
-        plt.tight_layout()
+        # Подготавливаем ticktext - исключаем ноль полностью из видимых делений
+        y_ticks_display_filtered = [y for y in y_ticks_display if y != 0]
+        y_ticktext = [f'{int(y)}' for y in y_ticks_display_filtered]
         
-        # Сохраняем в BytesIO
+        # Добавляем отступ для X оси (слева от графика)
+        date_range = (dates[-1] - dates[0]).days
+        x_padding_days = date_range * 0.05  # 5% отступ
+        x_min = dates[0] - timedelta(days=x_padding_days)
+        x_max = dates[-1] + timedelta(days=x_padding_days)
+        
+        # Вычисляем ровно 4 даты для оси X
+        x_ticks_dates = [
+            dates[0],
+            dates[len(dates) // 3],
+            dates[2 * len(dates) // 3],
+            dates[-1]
+        ]
+        # Удаляем дубликаты, если дат очень мало
+        x_ticks_dates = list(dict.fromkeys(x_ticks_dates))
+        
+        # Создаем фигуру plotly
+        fig = go.Figure()
+        
+        # Добавляем линию графика (темно-зеленая, более толстая)
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=cumulative_profit,
+            mode='lines',
+            line=dict(color='#1b5a3f', width=5),
+            hovertemplate='<b>%{x|%d.%m.%y}</b><br>Прибыль: %{y:.2f}<extra></extra>'
+        ))
+        
+        # Обновляем layout с размерами ближе к скриншоту
+        fig.update_layout(
+            # Размеры - более компактные
+            width=900,
+            height=500,
+            # Цвета в целом
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            # Убираем заголовок
+            title='',
+            # Убираем легенду
+            showlegend=False,
+            # Шрифты
+            font=dict(color='black', size=13),
+            # Отступы - увеличиваем справа и слева
+            margin=dict(l=80, r=80, t=30, b=80),
+            # Оси
+            xaxis=dict(
+                title='<b>Date</b>',
+                title_font=dict(size=15, color='black'),
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#e0e0e0',
+                showline=True,
+                linewidth=3,
+                linecolor='black',
+                mirror=False,
+                # Показываем ровно 4 даты на оси X
+                tickvals=x_ticks_dates,
+                tickformat='%d.%m.%y',
+                tickangle=0,
+                ticks='outside',
+                tickwidth=2,
+                ticklen=5,
+                tickfont=dict(size=13),
+                # Добавляем отступ слева и справа от графика
+                range=[x_min, x_max]
+            ),
+            yaxis=dict(
+                title='<b>Units</b>',
+                title_font=dict(size=15, color='black'),
+                showgrid=True,
+                gridwidth=2,
+                gridcolor='#d4d4d4',
+                showline=True,
+                linewidth=3,
+                linecolor='black',
+                mirror=False,
+                # Устанавливаем деления кратные трем (без нуля)
+                tickvals=y_ticks_display_filtered,
+                ticktext=y_ticktext,
+                ticks='outside',
+                tickwidth=2,
+                ticklen=5,
+                tickfont=dict(size=13),
+                range=[y_min_display, y_max_display]
+            ),
+            hovermode='x unified'
+        )
+        
+        # Сохраняем в BytesIO как PNG
         image_bytes = BytesIO()
-        plt.savefig(image_bytes, format='png', dpi=100, bbox_inches='tight', facecolor='#2b7f63')
-        plt.close()
-        
+        image_data = fig.to_image(format='png', width=900, height=500)
+        image_bytes.write(image_data)
         image_bytes.seek(0)
         return image_bytes
-        
     except Exception as e:
         print(f"[DB] Ошибка при генерации графика прибыли: {e}")
         return None
@@ -500,9 +583,9 @@ def get_total_profit():
             total_profit = round(total_profit, 2)
             profit_str = f"+{total_profit}" if total_profit >= 0 else f"{total_profit}"
             
-            return f"🔥 {profit_str} флэтов"
+            return f"<b>Total: {profit_str} units</b>"
         else:
-            return "❓ 0.00 флэтов"
+            return "❓ 0 units"
     except Exception as e:
         print(f"[DB] Ошибка при расчете итоговой прибыли: {e}")
         return f"❌ Ошибка при расчете прибыли: {e}"

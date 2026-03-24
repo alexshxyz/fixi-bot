@@ -40,13 +40,13 @@ def _handle_stop_command(chat_id, user_name):
 def _handle_help_command(chat_id, user_name):
     """Обрабатывает команду /help — отправка справки."""
     help_text = (
-        "❓ Справка:\n\n"
-        "▶️ Start - подписаться на уведомления о матчах\n"
-        "⏹️ Stop - отписаться от уведомлений\n"
-        "📊 Stats - посмотреть статистику\n"
-        "❓ Help - эта справка\n\n"
-        "Бот находится на этапе разработки, документация доступна по "
-        "<a href='https://telegra.ph/Rukovodstvo-po-ispolzovaniyu-bota-03-12'>ссылке</a> и также будет дополняться."
+        "❓ <b>Help:</b>\n\n"
+        "▶️ Start - Notification On\n"
+        "⏹️ Stop - Notification Off\n"
+        "📊 Stats - View Statistics\n"
+        "❓ Help - Help\n\n"
+        "Bot is under development, documentation available at "
+        "<a href='https://telegra.ph/Rukovodstvo-po-ispolzovaniyu-bota-03-12'>link</a> and will also be updated."
     )
     send_telegram_message(chat_id, help_text)
     print(f"[BOT] Пользователь {user_name} ({chat_id}) запросил /help")
@@ -70,14 +70,14 @@ def _handle_menu_button(chat_id):
 def _handle_start_button(chat_id):
     """Обрабатывает нажатие кнопки ▶️ Start."""
     add_subscriber(chat_id)
-    response_text = "✅ Теперь ты будешь получать уведомления о матчах!"
+    response_text = "✅ Notification On!"
     send_telegram_message(chat_id, response_text)
 
 
 def _handle_stop_button(chat_id):
     """Обрабатывает нажатие кнопки ⏹️ Stop."""
     remove_subscriber(chat_id)
-    response_text = "❌ Ты отписался от уведомлений.\nЧтобы подписаться снова, нажми '▶️ Start'."
+    response_text = "❌ Notification Off!"
     send_telegram_message(chat_id, response_text)
 
 
@@ -87,11 +87,11 @@ def _handle_stats_button(chat_id):
 
 
 def _handle_full_stats_button(chat_id):
-    """Обрабатывает нажатие кнопки 📈 Full Stats."""
+    """Обрабатывает нажатие кнопки 📚 Summary."""
     stats_text = get_full_stats()
     keyboard = {
         'keyboard': [
-            [{'text': '↩️ Назад к статистике'}]
+            [{'text': '↩️ Back to Stats'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
@@ -110,7 +110,7 @@ def _handle_last_5_button(chat_id):
     stats_text = get_last_5_matches()
     keyboard = {
         'keyboard': [
-            [{'text': '↩️ Назад к статистике'}]
+            [{'text': '↩️ Back to Stats'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
@@ -123,7 +123,7 @@ def _handle_this_month_button(chat_id):
     stats_text = get_this_month_stats()
     keyboard = {
         'keyboard': [
-            [{'text': '↩️ Назад к статистике'}]
+            [{'text': '↩️ Back to Stats'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
@@ -136,7 +136,7 @@ def _handle_top_leagues_button(chat_id):
     stats_text = get_top_leagues()
     keyboard = {
         'keyboard': [
-            [{'text': '↩️ Назад к статистике'}]
+            [{'text': '↩️ Back to Stats'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
@@ -149,7 +149,7 @@ def _handle_worst_leagues_button(chat_id):
     stats_text = get_worst_leagues()
     keyboard = {
         'keyboard': [
-            [{'text': '↩️ Назад к статистике'}]
+            [{'text': '↩️ Back to Stats'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
@@ -170,17 +170,17 @@ def _handle_back_menu_button(chat_id):
 def _handle_help_button(chat_id):
     """Обрабатывает нажатие кнопки ❓ Help."""
     help_text = (
-        "❓ Справка:\n\n"
-        "▶️ Start - подписаться на уведомления о матчах\n"
-        "⏹️ Stop - отписаться от уведомлений\n"
-        "📊 Stats - посмотреть статистику\n"
-        "❓ Help - эта справка\n\n"
-        "Бот находится на этапе разработки, документация доступна по "
-        "<a href='https://telegra.ph/Rukovodstvo-po-ispolzovaniyu-bota-03-12'>ссылке</a> и также будет дополняться."
+        "❓ <b>Help:</b>\n\n"
+        "▶️ Start - Notification On\n"
+        "⏹️ Stop - Notification Off\n"
+        "📊 Stats - View Statistics\n"
+        "❓ Help - This Help\n\n"
+        "Bot is under development, documentation available at "
+        "<a href='https://telegra.ph/Rukovodstvo-po-ispolzovaniyu-bota-03-12'>link</a> and will be updated."
     )
     keyboard = {
         'keyboard': [
-            [{'text': '🎲 Меню'}]
+            [{'text': '🎲 Menu'}]
         ],
         'resize_keyboard': True,
         'one_time_keyboard': False
@@ -191,13 +191,13 @@ def _handle_help_button(chat_id):
 def _handle_unknown_command(chat_id):
     """Обрабатывает неизвестную команду."""
     unknown_message = (
-        "❓ Неизвестная команда.\n\n"
-        "Доступные команды:\n"
-        "/start - подписаться\n"
-        "/stop - отписаться\n"
-        "/help - справка\n"
-        "/stats - посмотреть статистику\n\n"
-        "Или используй кнопку 🎲 Меню для навигации."
+        "❓ Unknown command.\n\n"
+        "Available commands:\n"
+        "/start - Subscribe\n"
+        "/stop - Unsubscribe\n"
+        "/help - Help\n"
+        "/stats - View Statistics\n\n"
+        "Or use the 🎲 Menu button for navigation."
     )
     send_telegram_message(chat_id, unknown_message)
 
@@ -226,7 +226,7 @@ def _route_message(chat_id, user_name, text):
         _handle_stats_command(chat_id, user_name)
     
     # Кнопки меню
-    elif text == '🎲 Меню':
+    elif text == '🎲 Menu':
         _handle_menu_button(chat_id)
     elif text == '▶️ Start':
         _handle_start_button(chat_id)
@@ -236,7 +236,7 @@ def _route_message(chat_id, user_name, text):
         _handle_stats_button(chat_id)
     
     # Кнопки статистики
-    elif text == '📈 Full Stats':
+    elif text == '📚 Summary':
         _handle_full_stats_button(chat_id)
     elif text == '⚡️ Last 5':
         _handle_last_5_button(chat_id)
@@ -244,13 +244,13 @@ def _route_message(chat_id, user_name, text):
         _handle_this_month_button(chat_id)
     elif text == '🏆 Top Leagues':
         _handle_top_leagues_button(chat_id)
-    elif text == '📉 Worst Leagues':
+    elif text == '⛔️ Worst Leagues':
         _handle_worst_leagues_button(chat_id)
     
     # Кнопки навигации
-    elif text == '↩️ Назад к статистике':
+    elif text == '↩️ Back to Stats':
         _handle_back_stats_button(chat_id)
-    elif text == '↩️ Назад в меню':
+    elif text == '↩️ Back to Menu':
         _handle_back_menu_button(chat_id)
     elif text == '❓ Help':
         _handle_help_button(chat_id)
