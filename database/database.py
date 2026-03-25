@@ -62,8 +62,8 @@ def insert_match_to_db(match, prediction_text=None, table=TABLE_NAME):
 
     # --- используем psycopg2.sql для безопасной подстановки имени таблицы ---
     insert_query = sql.SQL("""
-        INSERT INTO {table} (league, home_team, away_team, prediction, odds, final_score, result, link, script, date)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO {table} (id, league, home_team, away_team, prediction, odds, final_score, result, link, script, date, row_order)
+        VALUES (DEFAULT, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, DEFAULT)
     """).format(table=sql.Identifier(table))
 
     conn = None
