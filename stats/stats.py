@@ -187,10 +187,88 @@ def get_worst_leagues():
 
 def get_last_5_matches():
     """
-    Получает последние 5 матчей из БД с компактным форматом.
+    Получает последние 5 матчей из БД для вывода в Telegram с inline-кнопками.
     
     Returns:
-        str: отформатированный HTML-текст с последними 5 матчами
+        tuple: (текст для вывода, список данных матчей)
+    """
+    try:
+        conn = get_db_conn()
+        cur = conn.cursor()
+        
+        query = """
+        SELECT 
+            id,
+            league,
+            home_team,
+            away_team,
+            prediction,
+            final_score,
+            result,
+            date,
+            link,
+            odds
+        FROM matches
+        ORDER BY id DESC
+        LIMIT 5
+        """
+        
+        cur.execute(query)
+        results = cur.fetchall()
+        cur.close()
+        conn.close()
+        
+        if results:
+            matches_data = []
+            stats_text = ""  # Пустой текст - только кнопки
+            
+            for match_id, league, home_team, away_team, prediction, final_score, result, match_date, link, odds in results:
+                # Подготавливаем значения, заменяя пустые на "?"
+                home_team = home_team or "?"
+                away_team = away_team or "?"
+                
+                # Форматируем результат только смайликом
+                if result == 'Won':
+                    result_emoji = "✅"
+                elif result == 'Lost':
+                    result_emoji = "❌"
+                elif result == 'Void':
+                    result_emoji = "🔁"
+                else:
+                    result_emoji = "?"
+                
+                # Сохраняем полные данные для inline-кнопок
+                matches_data.append({
+                    'id': match_id,
+                    'league': league or "?",
+                    'home_team': home_team,
+                    'away_team': away_team,
+                    'prediction': prediction or "?",
+                    'final_score': final_score or "?",
+                    'result': result or "?",
+                    'result_emoji': result_emoji,
+                    'date': match_date,
+                    'link': link or "#",
+                    'odds': odds
+                })
+            
+            return stats_text, matches_data
+        else:
+            return "", []
+    except Exception as e:
+        print(f"[DB] Ошибка при получении последних матчей: {e}")
+        return "", []
+
+
+def get_match_details_by_id(match_id):
+    """
+    Получает подробную информацию о конкретном матче по ID.
+    
+    Args:
+        match_id: ID матча в БД
+        
+    Returns:
+        dict: информация о матче или None если не найден
     """
     try:
         conn = get_db_conn()
@@ -205,69 +283,60 @@ def get_last_5_matches():
             final_score,
             result,
             date,
-            link
+            link,
+            odds
         FROM matches
-        ORDER BY id DESC
-        LIMIT 5
+        WHERE id = %s
         """
         
-        cur.execute(query)
-        results = cur.fetchall()
+        cur.execute(query, (match_id,))
+        result = cur.fetchone()
         cur.close()
         conn.close()
         
-        if results:
-            stats_text = "<b>⚡️ LAST 5</b>\n\n"
+        if result:
+            league, home_team, away_team, prediction, final_score, result_status, match_date, link, odds = result
             
-            for league, home_team, away_team, prediction, final_score, result, match_date, link in results:
-                # Подготавливаем значения, заменяя пустые на "?"
-                league = league or "?"
-                home_team = home_team or "?"
-                away_team = away_team or "?"
-                prediction = prediction or "?"
-                final_score = final_score or "?"
-                link = link or "#"
-                
-                # Преобразуем дату из формата YYYY-MM-DD в ДД.МММ.ГГ
-                if match_date:
-                    try:
-                        if isinstance(match_date, str):
-                            # Парсим строку в формате YYYY-MM-DD (как сохраняется в БД)
-                            date_obj = datetime.strptime(match_date, '%Y-%m-%d')
-                            match_date = date_obj.strftime('%d.%m.%y')
-                        else:
-                            # Если это объект date/datetime, преобразуем
-                            match_date = match_date.strftime('%d.%m.%y')
-                    except Exception as e:
-                        print(f"[STATS] Ошибка при преобразовании даты {match_date}: {e}")
-                        match_date = "?"
-                else:
-                    match_date = "?"
-                
-                # Форматируем результат только смайликом
-                if result == 'Won':
-                    result_emoji = "✅"
-                elif result == 'Lost':
-                    result_emoji = "❌"
-                elif result == 'Void':
-                    result_emoji = "🔁"
-                else:
-                    result_emoji = "?"
-                
-                # Собираем сообщение в нужном формате
-                match_text = f"{result_emoji} <b>{home_team} - {away_team} ({final_score})</b>"
-                
-                stats_text += (
-                    f"<a href=\"{link}\">{match_text}</a>\n"
-                    f"{league} | {prediction} | <b>{match_date}</b>\n\n"
-                )
+            # Преобразуем дату
+            if match_date:
+                try:
+                    if isinstance(match_date, str):
+                        date_obj = datetime.strptime(match_date, '%Y-%m-%d')
+                        formatted_date = date_obj.strftime('%d.%m.%y')
+                    else:
+                        formatted_date = match_date.strftime('%d.%m.%y')
+                except Exception as e:
+                    print(f"[STATS] Ошибка при преобразовании даты {match_date}: {e}")
+                    formatted_date = "?"
+            else:
+                formatted_date = "?"
             
-            return stats_text.rstrip()
+            # Форматируем результат смайликом
+            if result_status == 'Won':
+                result_emoji = "✅"
+            elif result_status == 'Lost':
+                result_emoji = "❌"
+            elif result_status == 'Void':
+                result_emoji = "🔁"
+            else:
+                result_emoji = "?"
+            
+            return {
+                'emoji': result_emoji,
+                'league': league or "?",
+                'home_team': home_team or "?",
+                'away_team': away_team or "?",
+                'prediction': prediction or "?",
+                'final_score': final_score or "?",
+                'date': formatted_date,
+                'link': link or "#",
+                'odds': odds
+            }
         else:
-            return "⚡️ LAST 5\n\nNo data available."
+            return None
     except Exception as e:
-        print(f"[DB] Ошибка при получении последних матчей: {e}")
-        return f"❌ Ошибка при получении статистики: {e}"
+        print(f"[DB] Ошибка при получении деталей матча: {e}")
+        return None
 
 
 def get_this_month_stats():

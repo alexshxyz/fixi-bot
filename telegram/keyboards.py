@@ -54,7 +54,7 @@ def show_menu_buttons(chat_id):
         'one_time_keyboard': False
     }
     
-    send_telegram_message(chat_id, 'Main Menu', reply_markup=keyboard)
+    send_telegram_message(chat_id, '🎲 Menu', reply_markup=keyboard)
 
 
 # ============================================================================
@@ -81,7 +81,7 @@ def show_stats_menu_buttons(chat_id):
         'one_time_keyboard': False
     }
     
-    send_telegram_message(chat_id, 'Choose Statistics:', reply_markup=keyboard)
+    send_telegram_message(chat_id, '⬇️ Stats Selection', reply_markup=keyboard)
 
 
 def send_stats_submenu(chat_id):
@@ -104,7 +104,7 @@ def send_stats_submenu(chat_id):
         'one_time_keyboard': False
     }
     
-    send_telegram_message(chat_id, 'Choose Statistics:', reply_markup=keyboard)
+    send_telegram_message(chat_id, '⬇️ Stats Selection', reply_markup=keyboard)
 
 
 # ============================================================================

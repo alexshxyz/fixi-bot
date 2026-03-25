@@ -41,7 +41,7 @@ from .keyboards import (
 )
 
 # Telegram сервис - статистика
-from .stats import get_full_stats, get_top_leagues, get_worst_leagues
+from .stats import get_full_stats, get_top_leagues, get_worst_leagues, get_last_5_matches, get_match_details_by_id, get_profit_graph, get_this_month_stats, get_total_profit
 
 # Telegram сервис - обработка команд
 from .command_handler import handle_telegram_commands
@@ -70,7 +70,7 @@ __all__ = [
     'send_main_menu', 'show_menu_buttons', 'show_stats_menu_buttons', 'send_stats_submenu',
     'send_stats_back_keyboard', 'send_main_menu_keyboard',
     # stats
-    'get_full_stats', 'get_top_leagues', 'get_worst_leagues',
+    'get_full_stats', 'get_top_leagues', 'get_worst_leagues', 'get_last_5_matches', 'get_match_details_by_id', 'get_profit_graph', 'get_this_month_stats', 'get_total_profit',
     # command_handler
     'handle_telegram_commands',
     # parsers

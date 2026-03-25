@@ -4,6 +4,8 @@ Telegram клиент для отправки сообщений.
 """
 import json
 import requests
+import threading
+import time
 from core.config import BOT_TOKEN
 from subscribers.subscribers import load_subscribers
 
@@ -18,7 +20,7 @@ def send_telegram_message(chat_id, text, reply_markup=None):
         reply_markup: клавиатура (словарь с keyboard)
         
     Returns:
-        bool: True если отправка успешна, False в противном случае
+        int: ID сообщения если отправка успешна, None в противном случае
     """
     try:
         url = f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage'
@@ -32,10 +34,40 @@ def send_telegram_message(chat_id, text, reply_markup=None):
             params['reply_markup'] = json.dumps(reply_markup)
         
         response = requests.post(url, data=params, timeout=5)
-        return response.json().get('ok', False)
+        result = response.json()
+        if result.get('ok'):
+            return result.get('result', {}).get('message_id')
+        return None
     except Exception as e:
         print(f"[TELEGRAM] Ошибка при отправке: {e}")
-        return False
+        return None
+
+
+def send_and_delete_message(chat_id, text, reply_markup=None, delete_delay=1.0):
+    """
+    Отправляет сообщение и удаляет его через указанную задержку.
+    
+    Args:
+        chat_id: ID чата получателя
+        text: текст сообщения
+        reply_markup: клавиатура (опционально)
+        delete_delay: задержка перед удалением в секундах (по умолчанию 1 сека)
+        
+    Returns:
+        int: ID отправленного сообщения
+    """
+    message_id = send_telegram_message(chat_id, text, reply_markup)
+    
+    if message_id:
+        # Запускаем удаление в отдельном потоке, чтобы не блокировать основной процесс
+        def delete_after_delay():
+            time.sleep(delete_delay)
+            delete_telegram_message(chat_id, message_id)
+        
+        delete_thread = threading.Thread(target=delete_after_delay, daemon=True)
+        delete_thread.start()
+    
+    return message_id
 
 
 def send_message_to_all(text):
@@ -112,4 +144,29 @@ def send_photo_to_chat(chat_id, photo_bytes, caption=None):
         return response.json().get('ok', False)
     except Exception as e:
         print(f"[TELEGRAM] Ошибка при отправке фото: {e}")
+        return False
+
+
+def delete_telegram_message(chat_id, message_id):
+    """
+    Удаляет сообщение из чата.
+    
+    Args:
+        chat_id: ID чата
+        message_id: ID сообщения для удаления
+        
+    Returns:
+        bool: True если удаление успешно, False в противном случае
+    """
+    try:
+        url = f'https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage'
+        data = {
+            'chat_id': chat_id,
+            'message_id': message_id
+        }
+        
+        response = requests.post(url, data=data, timeout=5)
+        return response.json().get('ok', False)
+    except Exception as e:
+        print(f"[TELEGRAM] Ошибка при удалении сообщения: {e}")
         return False
