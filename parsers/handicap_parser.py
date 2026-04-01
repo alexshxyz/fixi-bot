@@ -6,7 +6,7 @@ from playwright.async_api import Page
 from .helpers import has_red
 
 
-async def parse_asian_handicap(page: Page, key: str, ah_meta: dict, rate_value: float):
+async def parse_asian_handicap(page: Page, key: str, is_half_time: bool, ah_meta: dict, rate_value: float):
     """
     Парсит Asian Handicap из таблицы #ahdetail.
     
@@ -16,10 +16,14 @@ async def parse_asian_handicap(page: Page, key: str, ah_meta: dict, rate_value: 
     Args:
         page: Playwright Page объект
         key: 'half' или 'full'
+        is_half_time: bool - True для HT (первый тайм), False для FT (полный матч)
         ah_meta: dict для сохранения метаданных handicap
         rate_value: максимальное значение коэффициента для фильтрации
     """
     try:
+        # Определяем tab на основе параметра is_half_time (детерминированно)
+        ah_meta[key]['tab'] = "HT" if is_half_time else "FT"
+        
         # Ищем таблицу #ahdetail
         try:
             ah_table = await page.query_selector('#ahdetail')

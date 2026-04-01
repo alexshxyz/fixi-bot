@@ -527,15 +527,22 @@ def get_profit_graph():
         x_min = dates[0] - timedelta(days=x_padding_days)
         x_max = dates[-1] + timedelta(days=x_padding_days)
         
-        # Вычисляем ровно 4 даты для оси X
-        x_ticks_dates = [
-            dates[0],
-            dates[len(dates) // 3],
-            dates[2 * len(dates) // 3],
-            dates[-1]
-        ]
-        # Удаляем дубликаты, если дат очень мало
-        x_ticks_dates = list(dict.fromkeys(x_ticks_dates))
+        # Формируем список всех месяцев, которые есть в данных, по порядку
+        month_names_en = {
+            1: "JAN", 2: "FEB", 3: "MAR", 4: "APR",
+            5: "MAY", 6: "JUN", 7: "JUL", 8: "AUG",
+            9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC"
+        }
+
+        x_ticks_dates = []
+        seen_months = set()
+        for d in dates:
+            month_key = (d.year, d.month)
+            if month_key not in seen_months:
+                seen_months.add(month_key)
+                x_ticks_dates.append(d)
+
+        x_ticktext_months = [month_names_en.get(d.month, "") for d in x_ticks_dates]
         
         # Создаем фигуру plotly
         fig = go.Figure()
@@ -545,15 +552,19 @@ def get_profit_graph():
             x=dates,
             y=cumulative_profit,
             mode='lines',
-            line=dict(color='#1b5a3f', width=5),
+            line=dict(color='#1b5a3f', width=4),
             hovertemplate='<b>%{x|%d.%m.%y}</b><br>Прибыль: %{y:.2f}<extra></extra>'
         ))
         
+        # Цвета осей (поменяны местами после просмотра скриншота)
+        color_y_axis = '#4172C4'  # Синий/Индиго для Units (Y)
+        color_x_axis = '#BA55D3'  # Лиловый для Date (X)
+        
         # Обновляем layout с размерами ближе к скриншоту
         fig.update_layout(
-            # Размеры - более компактные
-            width=900,
-            height=500,
+            # Размеры - увеличиваем график
+            width=950,
+            height=560,
             # Цвета в целом
             plot_bgcolor='white',
             paper_bgcolor='white',
@@ -561,52 +572,86 @@ def get_profit_graph():
             title='',
             # Убираем легенду
             showlegend=False,
-            # Шрифты
-            font=dict(color='black', size=13),
-            # Отступы - увеличиваем справа и слева
-            margin=dict(l=80, r=80, t=30, b=80),
+            # Шрифты по умолчанию
+            font=dict(color='black', size=13, family='Arial'),
+            # Отступы - уменьшаем верхний отступ, чтобы заголовок был ближе и график занял больше места
+            margin=dict(l=80, r=80, t=70, b=70),
             # Оси
             xaxis=dict(
-                title='<b>Date</b>',
-                title_font=dict(size=15, color='black'),
+                title='',  # Заголовок будет в annotations
                 showgrid=True,
                 gridwidth=1,
                 gridcolor='#e0e0e0',
                 showline=True,
                 linewidth=3,
-                linecolor='black',
+                linecolor=color_x_axis,  # Лиловый
                 mirror=False,
-                # Показываем ровно 4 даты на оси X
+                # Показываем ровно 4 даты на оси X (равномерно разделённые)
                 tickvals=x_ticks_dates,
-                tickformat='%d.%m.%y',
+                ticktext=x_ticktext_months,  # Названия месяцев на английском
                 tickangle=0,
                 ticks='outside',
-                tickwidth=2,
-                ticklen=5,
-                tickfont=dict(size=13),
+                tickwidth=3,  # Риски того же цвета что и ось
+                tickcolor=color_x_axis,  # Лиловый
+                ticklen=8,
+                tickfont=dict(size=12, family='Arial', color="#323033", weight='bold'),
                 # Добавляем отступ слева и справа от графика
                 range=[x_min, x_max]
             ),
             yaxis=dict(
-                title='<b>Units</b>',
-                title_font=dict(size=15, color='black'),
+                title='',  # Заголовок будет в annotations
                 showgrid=True,
                 gridwidth=2,
                 gridcolor='#d4d4d4',
                 showline=True,
                 linewidth=3,
-                linecolor='black',
+                linecolor=color_y_axis,  # Синий/Индиго
                 mirror=False,
                 # Устанавливаем деления кратные трем (без нуля)
                 tickvals=y_ticks_display_filtered,
                 ticktext=y_ticktext,
                 ticks='outside',
-                tickwidth=2,
-                ticklen=5,
-                tickfont=dict(size=13),
+                tickwidth=3,  # Риски того же цвета что и ось
+                tickcolor=color_y_axis,  # Синий/Индиго
+                ticklen=8,
+                tickfont=dict(size=12, family='Arial', color='black'),
                 range=[y_min_display, y_max_display]
             ),
             hovermode='x unified'
+        )
+        
+        # Добавляем аннотации для надписей осей и заголовка
+        fig.add_annotation(
+            text="Alltime Profit",
+            xref="paper", yref="paper",
+            x=0.5, y=1.09,
+            showarrow=False,
+            font=dict(size=22, family='Segoe UI', color='black', weight='bold'),
+            xanchor='center',
+            yanchor='bottom'
+        )
+        
+        # Аннотация для Y axis (Units) - синий прямоугольник + текст
+        # Используем Unicode символ ■ (черный квадрат) с цветом
+        fig.add_annotation(
+            text="■ Units",
+            xref="paper", yref="paper",
+            x=0.02, y=0.95,
+            showarrow=False,
+            font=dict(size=14, family='Arial', color=color_y_axis, weight='bold'),
+            xanchor='left',
+            yanchor='top'
+        )
+        
+        # Аннотация для X axis (Date) - лиловый прямоугольник + текст
+        fig.add_annotation(
+            text="■ Date",
+            xref="paper", yref="paper",
+            x=0.98, y=0.05,
+            showarrow=False,
+            font=dict(size=14, family='Arial', color=color_x_axis, weight='bold'),
+            xanchor='right',
+            yanchor='bottom'
         )
         
         # Сохраняем в BytesIO как PNG

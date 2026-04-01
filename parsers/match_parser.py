@@ -216,10 +216,10 @@ async def parse_match(page: Page, match_id: str):
                 key = 'half' if state else 'full'
                 
                 # Парсим Over коэффициенты
-                await parse_over_odds(page, match_id, key, over_values, over_meta)
+                await parse_over_odds(page, match_id, key, state, over_values, over_meta)
 
                 # Парсим Asian Handicap
-                await parse_asian_handicap(page, key, ah_meta, rate_value)
+                await parse_asian_handicap(page, key, state, ah_meta, rate_value)
 
             except Exception as e:
                 print(f"[ERROR] Ошибка при обработке state={state} для {url}: {e}")

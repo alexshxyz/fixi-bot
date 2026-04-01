@@ -5,7 +5,7 @@ from playwright.async_api import Page
 from .helpers import has_red
 
 
-async def parse_over_odds(page: Page, match_id: str, key: str, over_values: dict, over_meta: dict):
+async def parse_over_odds(page: Page, match_id: str, key: str, is_half_time: bool, over_values: dict, over_meta: dict):
     """
     Парсит Over коэффициенты для заданной половины матча из таблицы #oudetail.
     
@@ -16,6 +16,7 @@ async def parse_over_odds(page: Page, match_id: str, key: str, over_values: dict
         page: Playwright Page объект
         match_id: ID матча (для логирования)
         key: 'half' или 'full'
+        is_half_time: bool - True для HT (первый тайм), False для FT (полный матч)
         over_values: dict для сохранения значений коэффициентов
         over_meta: dict для сохранения метаданных
     """
@@ -85,14 +86,8 @@ async def parse_over_odds(page: Page, match_id: str, key: str, over_values: dict
             over_meta[key]['over'] = None
             return
 
-        # Парсим tab из селектора 'div.popinfo div.item.on'
-        try:
-            tab_elem = await page.query_selector('div.popinfo div.item.on')
-            if tab_elem:
-                tab_text = await tab_elem.text_content()
-                over_meta[key]['tab'] = (tab_text or "").strip()
-        except Exception:
-            over_meta[key]['tab'] = ""
+        # Определяем tab на основе параметра is_half_time (детерминированно, без ненадёжного UI селектора)
+        over_meta[key]['tab'] = "HT" if is_half_time else "FT"
         
         # Проверяем красный ли коэффициент (первая строка с данными)
         try:
