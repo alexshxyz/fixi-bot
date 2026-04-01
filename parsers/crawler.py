@@ -12,7 +12,7 @@ from .match_parser import parse_match
 
 async def parse_all_matches():
     """
-    Парсит все живые матчи со страницы https://www.nowgoal.com/
+    Парсит все живые матчи со страницы https://live5.nowgoal26.com/
     и запускает параллельный парсинг каждого матча используя пул страниц.
     """
     # Инициализируем браузер с пулом страниц
@@ -30,7 +30,7 @@ async def parse_all_matches():
         # Загружаем главную страницу
         for retry in range(3):
             try:
-                await main_page.goto('https://www.nowgoal.com/', wait_until='domcontentloaded', timeout=60000)
+                await main_page.goto('https://live5.nowgoal26.com/', wait_until='domcontentloaded', timeout=60000)
                 break
             except Exception as e:
                 if retry < 2:

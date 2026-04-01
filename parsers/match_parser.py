@@ -30,7 +30,7 @@ async def parse_match(page: Page, match_id: str):
     """
     try:
         print(f"PARSING {match_id}")
-        url = f'https://www.nowgoal.com/oddscomp/{match_id}'
+        url = f'https://live5.nowgoal26.com/oddscomp/{match_id}'
         
         # Повторные попытки загрузки страницы (до 3 раз)
         for attempt in range(3):
