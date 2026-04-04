@@ -15,8 +15,8 @@ asyncio-contextmanager==1.0.1   # Context manager utilities for async
 # ============================================================================
 # Data visualization
 # ============================================================================
-plotly==5.18.0                  # Interactive plotting library
-kaleido==0.2.1                  # Static image export for Plotly
+matplotlib==3.8.0               # Plotting library
+seaborn==0.13.0                 # Statistical data visualization
 
 # ============================================================================
 # Development & Testing (optional)

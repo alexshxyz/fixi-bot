@@ -3,7 +3,10 @@
 Функции для расчёта и форматирования статистики по лигам и в целом.
 """
 from database.database import get_db_conn
-import plotly.graph_objects as go
+import matplotlib
+matplotlib.use('Agg')  # Использовать неинтерактивный backend для избежания Tkinter ошибок
+import matplotlib.pyplot as plt
+import seaborn as sns
 from io import BytesIO
 from datetime import datetime, timedelta
 
@@ -418,7 +421,7 @@ def get_this_month_stats():
 
 def get_profit_graph():
     """
-    Генерирует график прибыли по датам матчей используя Plotly.
+    Генерирует график прибыли по датам матчей используя Seaborn + Matplotlib.
     Прибыль считается: Won = +0.8, Lost = -1, Void = 0
     Группирует данные по дням (точка - это конечный профит за день).
     
@@ -484,54 +487,30 @@ def get_profit_graph():
         dates = sorted_dates
         cumulative_profit = [daily_profit[d] for d in sorted_dates]
         
-        # Определяем деления по Y кратные трем с учетом нуля (0, 3, 6, 9, 12...)
-        min_profit = min(cumulative_profit)
+        # Определяем деления по Y кратные пяти (5, 10, 15, 20, 25) - ровно 5 делений
         max_profit = max(cumulative_profit)
         
-        # Находим диапазон в делениях по 3
-        y_min_ticks = int(min_profit // 3)
-        if min_profit % 3 != 0 and min_profit < 0:
-            y_min_ticks -= 1
+        # Фиксированная сетка: всегда 5 делений по 5
+        y_ticks_display = [5, 10, 15, 20, 25]
         
-        y_max_ticks = int(max_profit // 3)
-        if max_profit % 3 != 0 and max_profit > 0:
-            y_max_ticks += 1
-        
-        # Создаем список всех делений кратных 3
-        all_y_ticks = [i * 3 for i in range(y_min_ticks, y_max_ticks + 1)]
-        
-        # Убеждаемся, что ноль в списке
-        if 0 not in all_y_ticks:
-            all_y_ticks.append(0)
-        all_y_ticks = sorted(all_y_ticks)
-        
-        # Берем деления для отображения (примерно 4-5 делений)
-        step = max(1, len(all_y_ticks) // 4)
-        y_ticks_display = all_y_ticks[::step]
-        if all_y_ticks[-1] not in y_ticks_display:
-            y_ticks_display.append(all_y_ticks[-1])
-        
-        # Добавляем отступ для лучшего отображения (ноль в основании)
-        # Находим максимальное значение для расчета отступа сверху
-        y_max_tick = max(all_y_ticks) if all_y_ticks else max_profit
-        y_max_display = y_max_tick + abs(y_max_tick) * 0.1
+        # Вычисляем максимум для отображения - минимум 25, или выше если график больше
+        y_max_display = max(25, max_profit + abs(max_profit) * 0.1) if max_profit > 0 else 25 + 2.5
         y_min_display = 0  # Ноль всегда в основании
         
-        # Подготавливаем ticktext - исключаем ноль полностью из видимых делений
-        y_ticks_display_filtered = [y for y in y_ticks_display if y != 0]
-        y_ticktext = [f'{int(y)}' for y in y_ticks_display_filtered]
+        # Подготавливаем ticktext
+        y_ticktext = [f'{int(y)}' for y in y_ticks_display]
         
-        # Добавляем отступ для X оси (слева от графика)
+        # Добавляем отступ для X оси (слева и справа от графика)
         date_range = (dates[-1] - dates[0]).days
-        x_padding_days = date_range * 0.05  # 5% отступ
+        x_padding_days = date_range * 0.10  # 10% отступ
         x_min = dates[0] - timedelta(days=x_padding_days)
         x_max = dates[-1] + timedelta(days=x_padding_days)
         
         # Формируем список всех месяцев, которые есть в данных, по порядку
         month_names_en = {
-            1: "JAN", 2: "FEB", 3: "MAR", 4: "APR",
-            5: "MAY", 6: "JUN", 7: "JUL", 8: "AUG",
-            9: "SEP", 10: "OCT", 11: "NOV", 12: "DEC"
+            1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr",
+            5: "May", 6: "Jun", 7: "Jul", 8: "Aug",
+            9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec"
         }
 
         x_ticks_dates = []
@@ -544,122 +523,80 @@ def get_profit_graph():
 
         x_ticktext_months = [month_names_en.get(d.month, "") for d in x_ticks_dates]
         
-        # Создаем фигуру plotly
-        fig = go.Figure()
+        # Цвета осей
+        color_y_axis = '#316650'  # Синий/Индиго для Units (Y)
+        color_x_axis = '#AB4E52'  # Лиловый для Date (X)
         
-        # Добавляем линию графика (темно-зеленая, более толстая)
-        fig.add_trace(go.Scatter(
-            x=dates,
-            y=cumulative_profit,
-            mode='lines',
-            line=dict(color='#1b5a3f', width=4),
-            hovertemplate='<b>%{x|%d.%m.%y}</b><br>Прибыль: %{y:.2f}<extra></extra>'
-        ))
+        # Создаем фигуру Matplotlib - уменьшенная площадь для большего места осям
+        fig, ax = plt.subplots(figsize=(8.5, 5), dpi=100)
         
-        # Цвета осей (поменяны местами после просмотра скриншота)
-        color_y_axis = '#4172C4'  # Синий/Индиго для Units (Y)
-        color_x_axis = '#BA55D3'  # Лиловый для Date (X)
+        # Устанавливаем стиль Seaborn - darkgrid
+        sns.set_style("darkgrid")
         
-        # Обновляем layout с размерами ближе к скриншоту
-        fig.update_layout(
-            # Размеры - увеличиваем график
-            width=950,
-            height=560,
-            # Цвета в целом
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            # Убираем заголовок
-            title='',
-            # Убираем легенду
-            showlegend=False,
-            # Шрифты по умолчанию
-            font=dict(color='black', size=13, family='Arial'),
-            # Отступы - уменьшаем верхний отступ, чтобы заголовок был ближе и график занял больше места
-            margin=dict(l=80, r=80, t=70, b=70),
-            # Оси
-            xaxis=dict(
-                title='',  # Заголовок будет в annotations
-                showgrid=True,
-                gridwidth=1,
-                gridcolor='#e0e0e0',
-                showline=True,
-                linewidth=3,
-                linecolor=color_x_axis,  # Лиловый
-                mirror=False,
-                # Показываем ровно 4 даты на оси X (равномерно разделённые)
-                tickvals=x_ticks_dates,
-                ticktext=x_ticktext_months,  # Названия месяцев на английском
-                tickangle=0,
-                ticks='outside',
-                tickwidth=3,  # Риски того же цвета что и ось
-                tickcolor=color_x_axis,  # Лиловый
-                ticklen=8,
-                tickfont=dict(size=12, family='Arial', color="#323033", weight='bold'),
-                # Добавляем отступ слева и справа от графика
-                range=[x_min, x_max]
-            ),
-            yaxis=dict(
-                title='',  # Заголовок будет в annotations
-                showgrid=True,
-                gridwidth=2,
-                gridcolor='#d4d4d4',
-                showline=True,
-                linewidth=3,
-                linecolor=color_y_axis,  # Синий/Индиго
-                mirror=False,
-                # Устанавливаем деления кратные трем (без нуля)
-                tickvals=y_ticks_display_filtered,
-                ticktext=y_ticktext,
-                ticks='outside',
-                tickwidth=3,  # Риски того же цвета что и ось
-                tickcolor=color_y_axis,  # Синий/Индиго
-                ticklen=8,
-                tickfont=dict(size=12, family='Arial', color='black'),
-                range=[y_min_display, y_max_display]
-            ),
-            hovermode='x unified'
-        )
+        # Рисуем линию графика (темно-зеленая, более толстая)
+        ax.plot(dates, cumulative_profit, color="#1A4780", linewidth=3, zorder=2)
         
-        # Добавляем аннотации для надписей осей и заголовка
-        fig.add_annotation(
-            text="Alltime Profit",
-            xref="paper", yref="paper",
-            x=0.5, y=1.09,
-            showarrow=False,
-            font=dict(size=22, family='Segoe UI', color='black', weight='bold'),
-            xanchor='center',
-            yanchor='bottom'
-        )
+        # Добавляем точки в начале и в конце графика
+        ax.plot(dates[0], cumulative_profit[0], 'o', color='#1A4780', markersize=6, zorder=3)
+        ax.plot(dates[-1], cumulative_profit[-1], 'o', color='#1A4780', markersize=6, zorder=3)
         
-        # Аннотация для Y axis (Units) - синий прямоугольник + текст
-        # Используем Unicode символ ■ (черный квадрат) с цветом
-        fig.add_annotation(
-            text="■ Units",
-            xref="paper", yref="paper",
-            x=0.02, y=0.95,
-            showarrow=False,
-            font=dict(size=14, family='Arial', color=color_y_axis, weight='bold'),
-            xanchor='left',
-            yanchor='top'
-        )
+        # Настраиваем сетку - белая, увеличенная для стиля poster
+        ax.grid(True, alpha=1.0, color='#FFFFFF', linewidth=1.7)
+        ax.set_axisbelow(True)
         
-        # Аннотация для X axis (Date) - лиловый прямоугольник + текст
-        fig.add_annotation(
-            text="■ Date",
-            xref="paper", yref="paper",
-            x=0.98, y=0.05,
-            showarrow=False,
-            font=dict(size=14, family='Arial', color=color_x_axis, weight='bold'),
-            xanchor='right',
-            yanchor='bottom'
-        )
+        # Настраиваем фон - светло-серый
+        bg_color = "#EAEAF2"
+        ax.set_facecolor(bg_color)
+        fig.patch.set_facecolor('white')
+        
+        # Настраиваем X ось - белая (невидимая)
+        ax.set_xlim(x_min, x_max)
+        ax.set_xticks(x_ticks_dates)
+        ax.set_xticklabels(x_ticktext_months, fontsize=12, fontfamily='Segoe UI', color=color_x_axis)
+        ax.spines['bottom'].set_color('white')
+        ax.spines['bottom'].set_linewidth(0)
+        ax.tick_params(axis='x', pad=12, length=0, width=0, color='white', labelcolor=color_x_axis)
+        
+        # Настраиваем Y ось - белая (невидимая)
+        ax.set_ylim(y_min_display, y_max_display)
+        ax.set_yticks(y_ticks_display)
+        # Цвет чисел на оси Y - синий
+        ax.set_yticklabels(y_ticktext, fontsize=12, fontfamily='Arial', color=color_y_axis)
+        ax.spines['left'].set_color('white')
+        ax.spines['left'].set_linewidth(0)
+        ax.tick_params(axis='y', pad=12, length=0, width=0, color='white', labelcolor=color_y_axis)
+        
+        # Убираем верхнюю и правую границы
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        # Удаляем заголовок осей
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        
+        # Добавляем отступы - увеличены для большего места осям
+        fig.subplots_adjust(left=0.14, right=0.92, top=0.95, bottom=0.18)
+        
+        # Добавляем аннотации для осей ВНУТРИ графика
+        # Units - левая верхняя часть
+        ax.text(0.02, 0.98, '■ Units', fontsize=16, fontfamily='Arial', weight='bold', 
+                color=color_y_axis, transform=ax.transAxes, verticalalignment='top',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7, edgecolor='none'))
+        
+        # Date - правая нижняя часть
+        ax.text(0.98, 0.02, '■ Date', fontsize=16, fontfamily='Arial', weight='bold',
+                color=color_x_axis, transform=ax.transAxes, verticalalignment='bottom',
+                horizontalalignment='right',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7, edgecolor='none'))
         
         # Сохраняем в BytesIO как PNG
         image_bytes = BytesIO()
-        image_data = fig.to_image(format='png', width=900, height=500)
-        image_bytes.write(image_data)
+        fig.savefig(image_bytes, format='png', dpi=100, bbox_inches='tight', facecolor='white')
         image_bytes.seek(0)
+        plt.close(fig)
         return image_bytes
+    except Exception as e:
+        print(f"[DB] Ошибка при генерации графика прибыли: {e}")
     except Exception as e:
         print(f"[DB] Ошибка при генерации графика прибыли: {e}")
         return None
