@@ -120,8 +120,8 @@ async def parse_match(page: Page, match_id: str):
         rate_value = RATE
         liga = ""
 
-        # Парсим для обеих временных половин (HT и FT)
-        for state in (True, False):
+        # Парсим для обеих временных половин: сначала FT, затем HT
+        for state in (False, True):
             try:
                 # Проверяем что объект всё ещё существует перед использованием (ВАЖНО: не обращаемся к методам!)
                 try:
