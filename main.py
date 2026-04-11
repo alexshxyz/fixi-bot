@@ -56,9 +56,6 @@ def main():
     
     atexit.register(cleanup_on_exit)
     
-    # Очищаем оставшиеся Chrome процессы
-    cleanup_chrome_processes()
-    
     # Запускаем polling для команд бота в отдельном потоке
     bot_thread = threading.Thread(target=handle_telegram_commands, daemon=True)
     bot_thread.start()

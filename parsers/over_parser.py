@@ -5,7 +5,7 @@ from playwright.async_api import Page
 from .helpers import has_red
 
 
-async def parse_over_odds(page: Page, match_id: str, key: str, is_half_time: bool, over_values: dict, over_meta: dict):
+async def parse_over_odds(page: Page, match_id: str, key: str, is_half_time: bool, over_values: dict, over_meta: dict, actual_tab_label: str = None):
     """
     Парсит Over коэффициенты для заданной половины матча из таблицы #oudetail.
     
@@ -19,6 +19,7 @@ async def parse_over_odds(page: Page, match_id: str, key: str, is_half_time: boo
         is_half_time: bool - True для HT (первый тайм), False для FT (полный матч)
         over_values: dict для сохранения значений коэффициентов
         over_meta: dict для сохранения метаданных
+        actual_tab_label: 'HT' или 'FT' если доступно из UI
     """
     try:
         # Ищем таблицу #oudetail
@@ -86,8 +87,11 @@ async def parse_over_odds(page: Page, match_id: str, key: str, is_half_time: boo
             over_meta[key]['over'] = None
             return
 
-        # Определяем tab на основе параметра is_half_time (детерминированно, без ненадёжного UI селектора)
-        over_meta[key]['tab'] = "HT" if is_half_time else "FT"
+        # Определяем tab на основе активного UI, если он доступен.
+        if actual_tab_label in ('HT', 'FT'):
+            over_meta[key]['tab'] = actual_tab_label
+        else:
+            over_meta[key]['tab'] = "HT" if is_half_time else "FT"
         
         # Проверяем красный ли коэффициент (первая строка с данными)
         try:

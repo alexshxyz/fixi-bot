@@ -19,6 +19,49 @@ from .handicap_parser import parse_asian_handicap
 from utils.utils import strip_html_tags
 
 
+def normalize_tab_label(tab_text: str):
+    if not tab_text or not isinstance(tab_text, str):
+        return None
+    value = tab_text.strip().lower()
+    if any(token in value for token in ('ht', 'half', '1h', '1st')):
+        return 'HT'
+    if any(token in value for token in ('ft', 'full', '2h', '2nd')):
+        return 'FT'
+    return None
+
+
+async def get_current_tab_label(page: Page):
+    """
+    Определяет текущую активную вкладку HT/FT по UI.
+    Возвращает 'HT', 'FT' или None.
+    """
+    try:
+        active_tab_text = await page.evaluate("""
+            (() => {
+                const selectors = [
+                    'div.popinfo div.item.on',
+                    'div.popinfo div.item.active',
+                    'div.popinfo .item.on',
+                    'div.popinfo .item.active'
+                ];
+                for (const selector of selectors) {
+                    const el = document.querySelector(selector);
+                    if (el && el.textContent) return el.textContent.trim();
+                }
+                const items = document.querySelectorAll('div.popinfo div.item');
+                for (const el of items) {
+                    if (el.classList.contains('on') || el.classList.contains('active')) {
+                        return el.textContent.trim();
+                    }
+                }
+                return null;
+            })()
+        """)
+        return normalize_tab_label(active_tab_text)
+    except Exception:
+        return None
+
+
 async def parse_match(page: Page, match_id: str):
     """
     Парсит матч с сайта nowgoal.com и извлекает коэффициенты Over/Under и Asian Handicap.
@@ -121,6 +164,7 @@ async def parse_match(page: Page, match_id: str):
         liga = ""
 
         # Парсим для обеих временных половин: сначала FT, затем HT
+        parsed_tabs = set()
         for state in (False, True):
             try:
                 # Проверяем что объект всё ещё существует перед использованием (ВАЖНО: не обращаемся к методам!)
@@ -128,18 +172,17 @@ async def parse_match(page: Page, match_id: str):
                     obj_exists = await page.evaluate("typeof _oddsDetailWin !== 'undefined' && _oddsDetailWin !== null")
                     if not obj_exists:
                         continue
-                except Exception as e:
+                except Exception:
                     continue
                 
                 # Вызываем JS функцию для переключения временной половины
                 state_str = "true" if state else "false"
-                state_name = "First Half" if state else "Full Time"
                 try:
                     await page.evaluate(f"_oddsDetailWin.checkedHF({state_str})")
                     await asyncio.sleep(2)  # Ждём загрузки данных после переключения
                 except Exception as e:
                     error_str = str(e).lower()
-                    if 'this.restore is not a function' in str(e):
+                    if 'this.restore is not a function' in error_str:
                         await asyncio.sleep(4)
                     elif 'cannot read properties of null' in error_str:
                         continue
@@ -155,6 +198,28 @@ async def parse_match(page: Page, match_id: str):
                     continue
 
                 await asyncio.sleep(0.5)
+
+                actual_tab_label = None
+                for attempt_tab in range(3):
+                    actual_tab_label = await get_current_tab_label(page)
+                    if actual_tab_label:
+                        break
+                    await asyncio.sleep(1)
+
+                if actual_tab_label is None:
+                    print(f"[ERROR] Не удалось определить активную вкладку после checkedHF({state_str})")
+                    continue
+
+                expected_tab_label = "HT" if state else "FT"
+                if actual_tab_label != expected_tab_label:
+                    print(f"[WARNING] Ожидался таб {expected_tab_label}, но активен {actual_tab_label}. Пропускаем этот просмотр.")
+                    continue
+
+                if actual_tab_label in parsed_tabs:
+                    print(f"[DEBUG] Вкладка {actual_tab_label} уже обработана, пропускаем дублирование.")
+                    continue
+
+                parsed_tabs.add(actual_tab_label)
 
                 # Получаем HTML таблицы
                 try:
@@ -210,16 +275,16 @@ async def parse_match(page: Page, match_id: str):
                         liga_raw = await page.text_content('.LName')
                         if liga_raw:
                             liga = sanitize_league_name(liga_raw.strip())
-                    except Exception as e:
+                    except Exception:
                         pass
 
-                key = 'half' if state else 'full'
+                key = 'half' if actual_tab_label == 'HT' else 'full'
                 
                 # Парсим Over коэффициенты
-                await parse_over_odds(page, match_id, key, state, over_values, over_meta)
+                await parse_over_odds(page, match_id, key, state, over_values, over_meta, actual_tab_label=actual_tab_label)
 
                 # Парсим Asian Handicap
-                await parse_asian_handicap(page, key, state, ah_meta, rate_value)
+                await parse_asian_handicap(page, key, state, ah_meta, rate_value, actual_tab_label=actual_tab_label)
 
             except Exception as e:
                 print(f"[ERROR] Ошибка при обработке state={state} для {url}: {e}")

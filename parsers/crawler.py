@@ -38,22 +38,6 @@ async def parse_all_matches():
                 else:
                     raise
         
-        # Проверяем и закрываем всплывающее окно если оно есть
-        try:
-            # Ждём появления элемента с onclick closeImgPopWin (примерно 5 сек после загрузки)
-            print("[INFO] Ожидаем появления всплывающего окна...")
-            await main_page.wait_for_selector('[onclick*="closeImgPopWin"]', timeout=15000)
-            print("[INFO] Всплывающее окно появилось, закрываем его...")
-            
-            # Кликаем на элемент закрытия
-            await main_page.click('[onclick*="closeImgPopWin"]')
-            await asyncio.sleep(2)
-            print("[INFO] ✓ Всплывающее окно закрыто")
-            
-        except Exception as e:
-            print("[INFO] Всплывающее окно не появилось (это нормально, может быть нет на странице)")
-        
-        
         # Надёжный клик по кнопке Live для фильтрации только живых матчей
         click_success = False
         for click_attempt in range(5):
@@ -104,16 +88,36 @@ async def parse_all_matches():
         
         print("PARSING STARTED")
         
-        # Выбираем Crown в dropdown CompanySel
+        # Выбираем Crown в dropdown CompanySel и дожидаемся обновления данных
         try:
             # Ждём видимость dropdown
             await main_page.wait_for_selector("#CompanySel", timeout=10000)
-            
+
             # Используем select_option для выбора значения (правильный способ для select элементов)
             await main_page.select_option("#CompanySel", value="3")
-            await asyncio.sleep(3)
-            
-            print("[INFO] ✓ Crown выбран в CompanySelect")
+
+            # Ждём, что селект окончательно установится на Crown
+            await main_page.wait_for_function(
+                "() => { const select = document.querySelector('#CompanySel'); return select && select.value === '3'; }",
+                timeout=5000,
+            )
+
+            # Снимок текущего состояния таблицы до обновления
+            previous_rows = await main_page.evaluate(
+                "() => Array.from(document.querySelectorAll('table.tbl_max tbody tr.tds')).map(row => row.innerText.trim()).join('||')"
+            )
+
+            # Ждём обновления данных таблицы после смены конторы
+            try:
+                await main_page.wait_for_function(
+                    "prev => { const rows = Array.from(document.querySelectorAll('table.tbl_max tbody tr.tds')); const snapshot = rows.map(row => row.innerText.trim()).join('||'); return snapshot !== prev; }",
+                    previous_rows,
+                    timeout=15000,
+                )
+            except Exception:
+                await asyncio.sleep(3)
+
+            print("[INFO] ✓ Crown выбран в CompanySelect и данные обновились")
         except Exception as e:
             print(f"[WARNING] Не удалось выбрать Crown: {e}")
 
